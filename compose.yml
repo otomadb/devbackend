@@ -1,0 +1,79 @@
+name: otomadb-ppb
+version: "3.9"
+
+services:
+  api:
+    image: ghcr.io/otomadb/api:latest
+    ports:
+      - target: 8080
+        published: 9080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+
+  api-redis:
+    image: redis:7.0
+
+  ixgyohn:
+    image: ghcr.io/otomadb/ixgyohn:latest
+
+  ixgyohn-redis:
+    image: redis:7.0
+
+  # middlewares
+  postgres:
+    image: postgres:15
+    healthcheck:
+      test: pg_isready
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: test
+    volumes:
+      - type: volume
+        source: postgres_data
+        target: /var/lib/postgresql/data
+
+  neo4j:
+    image: neo4j:5.6
+    healthcheck:
+      test: neo4j status || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - type: volume
+        source: neo4j_data
+        target: /data
+      - type: volume
+        source: neo4j_logs
+        target: /logs
+    environment:
+      NEO4J_AUTH: neo4j/password
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.0
+    volumes:
+      - type: volume
+        source: meilisearch_data
+        target: /meili_data
+
+  imgproxy:
+    image: darthsim/imgproxy:latest
+    ports:
+      - target: 8080
+        published: 9081
+    environment:
+      IMGPROXY_KEY: $IMGPROXY_KEY
+      IMGPROXY_SALT: $IMGPROXY_SALT
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  neo4j_logs:
+  meilisearch_data:

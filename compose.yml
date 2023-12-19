@@ -70,6 +70,19 @@ services:
     environment:
       PRISMA_DATABASE_URL: "postgres://user:pass@postgres:5432/test"
 
+  pgweb:
+    image: sosedoff/pgweb
+    ports:
+      - target: 8081
+        published: 4001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-migration:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://user:pass@postgres:5432/test?sslmode=disable
+
   nicovideo-updater:
     build:
       context: ./nicovideo-updater

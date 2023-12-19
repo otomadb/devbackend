@@ -1,2 +1,5 @@
-# Env
+# env
 .env.prod
+
+# dump files
+dumps/

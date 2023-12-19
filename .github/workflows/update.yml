@@ -16,18 +16,22 @@ jobs:
           submodules: recursive
 
       - name: Update Submodules
-        run: |
-          git submodule update --init --recursive
-          git submodule foreach "git pull origin main"
+        run: git submodule update --remote --recursive
 
       - name: Check docker compose build
-        run: docker compose -f compose.yml build --progress=plain
+        run: |
+          touch .env.prod
+          docker compose -f compose.yml build --progress=plain
 
-      - name: Commit and Push Changes
+      - name: Commit files
         if: ${{ github.event_name != 'push' }}
         run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git add .
           git commit -m "Update submodules $(date +"%Y-%m-%d %H:%M:%S")"
-          git push
+
+      - uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}

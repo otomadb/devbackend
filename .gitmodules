@@ -4,3 +4,6 @@
 [submodule "main-prisma"]
 	path = main-prisma
 	url = https://github.com/otomadb/main-prisma
+[submodule "ixgyohn"]
+	path = ixgyohn
+	url = https://github.com/otomadb/ixgyohn

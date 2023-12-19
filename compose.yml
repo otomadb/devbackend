@@ -21,6 +21,9 @@ services:
       ENABLE_GRAPHIQL: "true"
       ENABLE_INTROSPECTION: "true"
 
+      # Servies
+      IXGYOHN_BASE_URL: http://ixgyohn:38080
+
       # Prisma (Postgres)
       PRISMA_DATABASE_URL: "postgres://user:pass@postgres:5432/test"
 
@@ -126,7 +129,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - target: 38080
-        published: 38080
+        published: 48080
     environment:
       IMGPROXY_URL: "http://localhost:18080"
       IMGPROXY_KEY: "cdfd5eace0fdef0fb3266cde7047fb4c0ddee095e6628b9d2bf1d0119a74fca8a9ceef808129dc023adb7cc64b942b102ff54b36112695a0ac376348654a5830"

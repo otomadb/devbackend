@@ -7,3 +7,6 @@
 [submodule "ixgyohn"]
 	path = ixgyohn
 	url = https://github.com/otomadb/ixgyohn
+[submodule "nicovideo-updater"]
+	path = nicovideo-updater
+	url = https://github.com/otomadb/nicovideo-updater

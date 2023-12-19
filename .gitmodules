@@ -1,3 +1,6 @@
 [submodule "graphql-api"]
 	path = graphql-api
 	url = https://github.com/otomadb/graphql-api
+[submodule "main-prisma"]
+	path = main-prisma
+	url = https://github.com/otomadb/main-prisma

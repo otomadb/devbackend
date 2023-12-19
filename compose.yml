@@ -2,29 +2,44 @@ name: otomadb-ppb
 version: "3.9"
 
 services:
-  api:
-    image: ghcr.io/otomadb/api:latest
-    ports:
-      - target: 8080
-        published: 9080
+  graphql-api:
+    build:
+      context: ./graphql-api
+      dockerfile: Dockerfile
     depends_on:
       postgres:
         condition: service_healthy
       neo4j:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres-migration:
+        condition: service_completed_successfully
+    env_file:
+      - .env.prod
+    environment:
+      ENABLE_GRAPHIQL: "true"
+      ENABLE_INTROSPECTION: "true"
 
-  api-redis:
-    image: redis:7.0
+      # Prisma (Postgres)
+      PRISMA_DATABASE_URL: "postgres://user:pass@postgres:5432/test"
 
-  ixgyohn:
-    image: ghcr.io/otomadb/ixgyohn:latest
+      # Meilisearch
+      MEILISEARCH_URL: "http://meilisearch:7700"
 
-  ixgyohn-redis:
-    image: redis:7.0
+      # Neo4j
+      NEO4J_URL: "bolt://neo4j:7687"
+      NEO4J_USERNAME: "neo4j"
+      NEO4J_PASSWORD: "password"
 
-  # middlewares
+      # Redis
+      REDIS_URL: "redis://redis:6379"
+    ports:
+      - target: 8080
+        published: 4000
+
   postgres:
-    image: postgres:15
+    image: postgres:15@sha256:bec340fb35711dd4a989146591b6adfaac53e6b0c02524ff956c43b054d117dd
     healthcheck:
       test: pg_isready
       interval: 10s
@@ -38,11 +53,38 @@ services:
       - type: volume
         source: postgres_data
         target: /var/lib/postgresql/data
+    ports:
+      - target: 5432
+        published: 15432
+
+  postgres-migration:
+    build:
+      context: ./main-prisma
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PRISMA_DATABASE_URL: "postgres://user:pass@postgres:5432/test"
+
+  nicovideo-updater:
+    build:
+      context: ./nicovideo-updater
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-migration:
+        condition: service_completed_successfully
+    environment:
+      PRISMA_DATABASE_URL: "postgres://user:pass@postgres:5432/test"
 
   neo4j:
-    image: neo4j:5.6
+    image: neo4j:5.15@sha256:9c564b96267ab1b2c64944808d3b4cb054c6b7be684cd98027804effefe6db8f
+    environment:
+      NEO4J_AUTH: neo4j/password
     healthcheck:
-      test: neo4j status || exit 1
+      test: neo4j status || exit 1 # TODO:
       interval: 10s
       timeout: 5s
       retries: 5
@@ -53,24 +95,42 @@ services:
       - type: volume
         source: neo4j_logs
         target: /logs
-    environment:
-      NEO4J_AUTH: neo4j/password
+
+  redis:
+    image: redis:7.2@sha256:249e1bfb9448ae9e76807748f8cb3c5cc73e55441b7b36364c61a7428c9e814c
+    healthcheck:
+      test: redis-cli ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   meilisearch:
-    image: getmeili/meilisearch:v1.0
+    image: getmeili/meilisearch:v1.0@sha256:dd8162da4cebbdec1ab6176754cff941b04427e7f8df532896a920ec3d292d8a
     volumes:
       - type: volume
         source: meilisearch_data
         target: /meili_data
 
   imgproxy:
-    image: darthsim/imgproxy:latest
+    image: darthsim/imgproxy:latest@sha256:68b76f9d056d4105d5eac3072a430db12a766ffb0fbdbfd11b4fc48c1dc80df4
     ports:
       - target: 8080
-        published: 9081
+        published: 18080
     environment:
-      IMGPROXY_KEY: $IMGPROXY_KEY
-      IMGPROXY_SALT: $IMGPROXY_SALT
+      IMGPROXY_KEY: "cdfd5eace0fdef0fb3266cde7047fb4c0ddee095e6628b9d2bf1d0119a74fca8a9ceef808129dc023adb7cc64b942b102ff54b36112695a0ac376348654a5830"
+      IMGPROXY_SALT: "14b77ca054ebbf64fd72c8bc4ee5cd7d9708e444f19c632aa13c2082d05bcab077ffd88eb14e30cb19cb18b877a8f202a39a93bcab633f7eda430b2ecbecdf30"
+
+  ixgyohn:
+    build:
+      context: ./ixgyohn
+      dockerfile: Dockerfile
+    ports:
+      - target: 38080
+        published: 38080
+    environment:
+      IMGPROXY_URL: "http://localhost:18080"
+      IMGPROXY_KEY: "cdfd5eace0fdef0fb3266cde7047fb4c0ddee095e6628b9d2bf1d0119a74fca8a9ceef808129dc023adb7cc64b942b102ff54b36112695a0ac376348654a5830"
+      IMGPROXY_SALT: "14b77ca054ebbf64fd72c8bc4ee5cd7d9708e444f19c632aa13c2082d05bcab077ffd88eb14e30cb19cb18b877a8f202a39a93bcab633f7eda430b2ecbecdf30"
 
 volumes:
   postgres_data:

@@ -1,0 +1,33 @@
+name: Update Submodules
+
+on:
+  push:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  update-submodules:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Update Submodules
+        run: |
+          git submodule update --init --recursive
+          git submodule foreach "git pull origin main"
+
+      - name: Check docker compose build
+        run: docker compose -f compose.yml build --progress=plain
+
+      - name: Commit and Push Changes
+        if: ${{ github.event_name != 'push' }}
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git add .
+          git commit -m "Update submodules $(date +"%Y-%m-%d %H:%M:%S")"
+          git push

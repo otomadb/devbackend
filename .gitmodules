@@ -1,0 +1,3 @@
+[submodule "graphql-api"]
+	path = graphql-api
+	url = https://github.com/otomadb/graphql-api

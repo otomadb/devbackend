@@ -18,10 +18,18 @@ jobs:
       - name: Update Submodules
         run: git submodule update --remote --recursive
 
+      - id: diff
+        name: Check diff
+        run: |
+          git add -N .
+          git diff --exit-code --quiet
+        continue-on-error: true
+
       - name: Check docker compose build
         run: |
           touch .env.prod
           docker compose -f compose.yml build --progress=plain
+        if: steps.diff.outcome == 'failure'
 
       - name: Commit files
         if: ${{ github.event_name != 'push' }}
